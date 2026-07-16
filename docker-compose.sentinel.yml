@@ -1,0 +1,24 @@
+# 覆盖层：叠加 sentinel-solver 侧车（跑真官方 sdk.js 解 turnstile）。
+# 用法:
+#   docker compose -f docker-compose.yml -f docker-compose.sentinel.yml up -d --build
+# app 通过 CHATGPT2API_SENTINEL_SOLVER_URL 调用 solver；未配/不可用时 build_sentinel_token 自动降级到进程内拼接。
+services:
+  sentinel-solver:
+    build:
+      context: ./sentinel_solver
+      dockerfile: Dockerfile
+    image: yanai-sentinel-solver:local
+    container_name: yanai-sentinel-solver
+    restart: unless-stopped
+    environment:
+      # solver 浏览器走代理：sentinel.openai.com 对直连 IP 会 CF 硬封。改成你自己的干净代理。
+      SENTINEL_SOLVER_PROXY: ${SENTINEL_SOLVER_PROXY:-http://192.168.43.164:7897}
+    ports:
+      - "127.0.0.1:8012:8000"
+
+  app:
+    environment:
+      CHATGPT2API_SENTINEL_SOLVER_URL: http://sentinel-solver:8000/solve
+    depends_on:
+      sentinel-solver:
+        condition: service_started

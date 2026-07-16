@@ -9,6 +9,9 @@ services:
       # Keep secrets and mutable runtime state outside of the public image.
       - ./data:/app/data
       - ./config.json:/app/config.json
+      # 挂载本地补丁目录，让预构建镜像用上改过的 utils/services（sentinel solver 接线）
+      - ./utils:/app/utils
+      - ./services:/app/services
     environment:
       STORAGE_BACKEND: ${STORAGE_BACKEND:-json}
       # DATABASE_URL: sqlite:////app/data/accounts.db

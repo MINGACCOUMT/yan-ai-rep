@@ -1,0 +1,6 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2
+# 锁定 playwright 版本，并在 Dockerfile 里 `playwright install chromium` 装匹配的浏览器，
+# 避免与 base image 自带的浏览器版本不匹配（headless shell 缺失）。
+playwright==1.61.0

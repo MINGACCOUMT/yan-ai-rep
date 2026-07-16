@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import random
 import secrets
 import string
@@ -288,6 +289,25 @@ class SentinelTokenGenerator:
 
 
 def build_sentinel_token(session: requests.Session, device_id: str, flow: str) -> str:
+    # 优先走外部 sentinel-solver（跑真官方 sdk.js，turnstile.t 解出来）；失败降级到下面进程内拼接（t 空）。
+    solver_url = (os.environ.get("CHATGPT2API_SENTINEL_SOLVER_URL") or "").strip()
+    if solver_url:
+        try:
+            _r = requests.post(solver_url, json={"device_id": device_id, "flow": flow, "observer_wait_ms": 5000}, timeout=40, verify=False)
+            if _r.status_code == 200:
+                _d = _r.json() if _r.text else {}
+                _st = str(_d.get("sentinel_token") or "").strip()
+                if _st:
+                    _oai_sc = str(_d.get("oai_sc") or "").strip()
+                    if _oai_sc:
+                        for _domain in (".openai.com", "auth.openai.com"):
+                            try:
+                                session.cookies.set("oai-sc", _oai_sc, domain=_domain)
+                            except Exception:
+                                pass
+                    return _st
+        except Exception:
+            pass
     generator = SentinelTokenGenerator(device_id, user_agent)
     resp = session.post(
         "https://sentinel.openai.com/backend-api/sentinel/req",
