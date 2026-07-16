@@ -7,7 +7,7 @@ services:
     build:
       context: ./sentinel_solver
       dockerfile: Dockerfile
-    image: yanai-sentinel-solver:local
+    image: registry.cn-hangzhou.aliyuncs.com/koramkoin/sentinel-solver:latest
     container_name: yanai-sentinel-solver
     restart: unless-stopped
     environment:
